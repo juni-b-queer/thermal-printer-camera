@@ -12,6 +12,8 @@ import modules.neopixel_control as neopixel_control
 import utils.colors as colors
 import modules.configuration as configuration
 from modules.configuration import CONFIG_METADATA
+import modules.camera_control as camera_control
+import modules.printer_control as printer_control
 from time import time
 from escpos.printer import Serial
 
@@ -63,19 +65,11 @@ pygame.init()
 display_res = (640, 480)
 screen = pygame.display.set_mode(display_res, pygame.FULLSCREEN)
 
-# Set desired preview size in the pygame window
+# Set desired camera sizes
+main_size =(1920, 1440)
 preview_size = (504, 378)
 
-# Set actual camera resolution (capture size)
-camera = Picamera2()
-# camera.still_configuration.main.size = camera.sensor_resolution
-camera.still_configuration.main.size = (1920, 1440)
-camera.still_configuration.main.format = "BGR888"
-
-camera.preview_configuration.main.size = preview_size
-camera.preview_configuration.main.format = "BGR888"
-camera.configure("preview")
-camera.start()
+camera = camera_control.init_camera(main_size, preview_size)
 
 # Font setup
 font = pygame.font.SysFont("Arial", 24)
@@ -496,21 +490,8 @@ def handle_config_menu_click(pos):
             mode = 0
             return
 
-
-# Camera functions
-def takePicture(imageName):
-    # set picture size to 1920x1080
-    camera.switch_mode("still")
-
-    # Capture the image
-    camera.capture_file(imageName)
-
-    # Switch back to preview mode
-    camera.switch_mode("preview")
-
-
 def handle_photo_sequence(num_photos=1, combine_photos=False):
-    global takingPicture, waiting_for_first, photo_count, photo_sequence_start, led_state, last_blink_time, flashOn
+    global takingPicture, waiting_for_first, photo_count, photo_sequence_start, led_state, last_blink_time, flashOn, camera
 
     time_to_picture = COUNTDOWN
 
@@ -540,7 +521,7 @@ def handle_photo_sequence(num_photos=1, combine_photos=False):
         neopixel_control.setLED(pixels, colors.OFF)
 
         photo_filename = f"/home/pi/Desktop/picamera/pics/{'pb_' if num_photos > 1 else ''}{photo_count}.jpg"
-        takePicture(photo_filename)
+        camera_control.take_picture(camera, photo_filename)
 
         current_time = time()
         photo_sequence_start = current_time
@@ -558,7 +539,7 @@ def handle_photo_sequence(num_photos=1, combine_photos=False):
         photo_count += 1
 
         photo_filename = f"/home/pi/Desktop/picamera/pics/{'pb_' if num_photos > 1 else ''}{photo_count}.jpg"
-        takePicture(photo_filename)
+        camera_control.take_picture(camera, photo_filename)
 
         current_time = time()
         photo_sequence_start = current_time
@@ -611,7 +592,7 @@ def startPrintThread(path):
 def printBmp(path):
     print('print bmp')
     neopixel_control.setLED(pixels, colors.BLUE)
-    p = Serial(devfile='/dev/ttyS0', baudrate=9600, bytesize=8, parity='N', stopbits=1, timeout=1.00, dsrdtr=True)
+    p = printer_control.init_printer()
     p.image(path)
     p.textln('')
     p.textln(datetime.now().strftime("%D %H:%M"))
