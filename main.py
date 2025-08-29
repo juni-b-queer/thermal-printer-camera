@@ -10,8 +10,8 @@ import threading
 import modules.image_control as image_control
 import modules.neopixel_control as neopixel_control
 import utils.colors as colors
-import configuration
-from configuration import CONFIG_METADATA
+import modules.configuration as configuration
+from modules.configuration import CONFIG_METADATA
 from time import time
 from escpos.printer import Serial
 
