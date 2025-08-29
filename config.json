@@ -1,0 +1,7 @@
+{
+  "countdown": 3.0,
+  "photo_interval": 10.0,
+  "photobooth_count": 4,
+  "show_flash": true,
+  "flash_color": 16777215
+}
